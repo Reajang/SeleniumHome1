@@ -5,6 +5,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.util.List;
@@ -33,31 +34,84 @@ public class RgsTestFirst {
         request.click();
 
         WebElement checkRequest = driver.findElement(By.xpath("//*[@class='modal-content']"));
-        /*String expectedString2 = "Заявка на добровольное медицинское страхование";
-        Assert.assertEquals(expectedString2, checkRequest.findElement(By.xpath("//*[@class='modal-header']")).getText());//НЕ РАБОТАЕТ*/
 
-        WebDriverWait wait = new WebDriverWait(driver, 6, 200);//Ожидание появления окна
+        WebDriverWait wait = new WebDriverWait(driver, 5, 200);//Ожидание появления окна
         wait.until(ExpectedConditions.elementToBeClickable(checkRequest));
 
-        /*String stringForm = "//*[text()= '%s']/following::input[1]";
-        String path = String.format(stringForm, "Имя");*/
+        String expectedString2 = "Заявка на добровольное медицинское страхование";
+        Assert.assertEquals(expectedString2, checkRequest.findElement(By.xpath("//*[@class='modal-title']")).getText());//Проверка заголовка
+
+        //Ввод и проверка поля Имя
         fillFields("Имя", "Один");
-        //Assert.assertEquals("Один", driver.findElement(By.xpath(path)).getText());
+        checkRequest.click();//Клик на поле checkReques как действие для окончания ввода в поле имя
+        wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()= 'Имя']/following::input[@class='form-control validation-control-has-success']"))));//Ожидает валидации введенных данных в поле
+        String checkName = checkRequest.findElement(By.xpath("//*[text()= 'Имя']/following::input[1]")).getAttribute("value");
+        Assert.assertEquals("Один", checkName);
 
+        //Ввод и проверка поля Фамилия
         fillFields("Фамилия", "Два");
-        fillFields("Отчество", "Три");
-        fillFields("Телефон", "8005553535");
-        fillFields("Эл. почта", "qwertyqwerty");
-        fillFields("Предпочитаемая дата контакта", "19072019");
-        driver.findElement(By.xpath("//*[text()= 'Комментарии']/following::textarea")).sendKeys("Текст");//Комментарии
+        checkRequest.click();
+        wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()= 'Фамилия']/following::input[@class='form-control validation-control-has-success']"))));
+        String checkLastname = checkRequest.findElement(By.xpath("//*[text()= 'Фамилия']/following::input[1]")).getAttribute("value");
+        Assert.assertEquals("Два", checkLastname);
 
-        List<WebElement> regions = driver.findElements(By.xpath("//*[contains(text(),'Регион')]/following::option"));//Выбор региона
-        regions.get(new Random().nextInt(84)).click();
+        //Ввод и проверка поля Отчество
+        fillFields("Отчество", "Три");
+        checkRequest.click();
+        wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()= 'Отчество']/following::input[@class='form-control validation-control-has-success']"))));
+        String checkMidname = checkRequest.findElement(By.xpath("//*[text()= 'Отчество']/following::input[1]")).getAttribute("value");
+        Assert.assertEquals("Три", checkMidname);
+
+        //Телефон
+        fillFields("Телефон", "8005553535");
+        checkRequest.click();
+        wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()= 'Телефон']/following::input[@class='form-control validation-control-has-success']"))));
+        String checkTel = checkRequest.findElement(By.xpath("//*[text()= 'Телефон']/following::input[1]")).getAttribute("value");
+        Assert.assertEquals("+7 (800) 555-35-35", checkTel);
+
+        //Эл. почта
+        fillFields("Эл. почта", "qwertyqwerty");
+        checkRequest.click();
+        //Нет ожидания. т.к. вводятся неверные данные и поля описанного ниже не появится
+        //wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()= 'Эл. почта']/following::input[@class='form-control validation-control-has-success']"))));
+        String checkMail = checkRequest.findElement(By.xpath("//*[text()= 'Эл. почта']/following::input[1]")).getAttribute("value");
+        Assert.assertEquals("qwertyqwerty", checkMail);
+
+        //Дата контакта
+        fillFields("Предпочитаемая дата контакта", "19072019");
+        //checkRequest.click();
+        checkRequest.findElement(By.xpath("//*[@class='modal-title']")).click();
+        //wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()= 'Предпочитаемая дата контакта']/following::input[@class='form-control validation-control-has-success']"))));
+        String checkColl = checkRequest.findElement(By.xpath("//*[text()= 'Предпочитаемая дата контакта']/following::input[1]")).getAttribute("value");
+        Assert.assertEquals("19.07.2019", checkColl);
+
+        //Комментарий
+        String comPath = "//*[text()= 'Комментарии']/following::textarea";
+        driver.findElement(By.xpath(comPath)).sendKeys("Текст");
+        checkRequest.click();
+        String checkCom = checkRequest.findElement(By.xpath(comPath)).getAttribute("value");
+        Assert.assertEquals("Текст", checkCom);
+
+        //Регион
+        List<WebElement> regions = driver.findElements(By.xpath("//*[contains(text(),'Регион')]/following::option"));//Список всех доступных регионов
+        int regValue = new Random().nextInt(regions.size());
+        regions.get(regValue).click();
+        //wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[@class='popupSelect form-control validation-control-has-success']"))));
+        String checkReg = new Select(checkRequest.findElement(By.xpath("//*[@name='Region']"))).getFirstSelectedOption().getText();
+        String selectedReg = regions.get(regValue).getText();
+        Assert.assertEquals(selectedReg, checkReg);
 
         driver.findElement(By.xpath("//*[contains(text(),'Я согласен')]/preceding-sibling::input")).click();//Я согласен на обработку
         driver.findElement(By.xpath("//*[@id='button-m']")).click();//Отправить
 
-        Assert.assertEquals("Введите адрес электронной почты", driver.findElement(By.xpath("//*[text()='Эл. почта']/following::span[1]")).getText());
+        wait.until(ExpectedConditions.visibilityOf(checkRequest.findElement(By.xpath("//*[text()='Эл. почта']//following::label[1]"))));//Ожидание поля с ошибкой у поля Эл. почта
+        String emailErrorMes = checkRequest.findElement(By.xpath("//*[text()='Эл. почта']//following::label[1]")).getText().trim();
+        Assert.assertEquals("Введите адрес электронной почты", emailErrorMes);//Проверка что у поля Эл. почта присутствует сообщение об ошибке
+
+        //Корректный еmail
+        checkRequest.findElement(By.xpath("//*[text()= 'Эл. почта']/following::input[1]")).clear();//Удаление старых данных в графе email
+        fillFields("Эл. почта", "trainee@aplana.ru");
+        checkRequest.click();
 
         driver.close();
         driver.quit();
@@ -70,4 +124,3 @@ public class RgsTestFirst {
 
 }
 
-//*[text()='Эл. почта']/following::*[@class='validation-error-text']
